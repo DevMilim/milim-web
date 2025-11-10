@@ -1,0 +1,11 @@
+[package]
+name = "milim-web"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+core = { version = "0.1.0", path = "core" }
+
+
+[workspace]
+members = ["core"]
