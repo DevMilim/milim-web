@@ -1,9 +1,0 @@
-(function() {
-    var implementors = Object.fromEntries([["core",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/cmp/trait.PartialEq.html\" title=\"trait core::cmp::PartialEq\">PartialEq</a> for <a class=\"enum\" href=\"core/error/enum.ServerError.html\" title=\"enum core::error::ServerError\">ServerError</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/cmp/trait.PartialEq.html\" title=\"trait core::cmp::PartialEq\">PartialEq</a> for <a class=\"enum\" href=\"core/request/enum.Method.html\" title=\"enum core::request::Method\">Method</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/cmp/trait.PartialEq.html\" title=\"trait core::cmp::PartialEq\">PartialEq</a> for <a class=\"enum\" href=\"core/request/enum.Resource.html\" title=\"enum core::request::Resource\">Resource</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/cmp/trait.PartialEq.html\" title=\"trait core::cmp::PartialEq\">PartialEq</a> for <a class=\"enum\" href=\"core/request/enum.Version.html\" title=\"enum core::request::Version\">Version</a>"],["impl&lt;'a&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/cmp/trait.PartialEq.html\" title=\"trait core::cmp::PartialEq\">PartialEq</a> for <a class=\"struct\" href=\"core/responses/struct.HttpResponse.html\" title=\"struct core::responses::HttpResponse\">HttpResponse</a>&lt;'a&gt;"]]]]);
-    if (window.register_implementors) {
-        window.register_implementors(implementors);
-    } else {
-        window.pending_implementors = implementors;
-    }
-})()
-//{"start":57,"fragment_lengths":[1378]}
