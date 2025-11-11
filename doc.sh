@@ -1,7 +1,7 @@
 cargo doc --no-deps -p core
 rm -rf doc/**
-cp -r target/doc/* ./doc
-cat > doc/index.html <<'HTML'
+cp -r target/doc/* ./docs
+cat > docs/index.html <<'HTML'
 <!doctype html>
 <html>
   <head>
