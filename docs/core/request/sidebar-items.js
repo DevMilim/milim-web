@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Method","Resource","Version"],"struct":["HttpRequest"]};
