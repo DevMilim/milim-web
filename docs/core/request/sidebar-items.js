@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Method","Resource","Version"],"struct":["HttpRequest"]};
+window.SIDEBAR_ITEMS = {"enum":["Method","Resource","Version"],"fn":["process_header_line","process_req_line"],"struct":["HttpRequest"]};

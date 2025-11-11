@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["HttpResponse"],"trait":["Responder"]};
+window.SIDEBAR_ITEMS = {"mod":["responder","response"],"struct":["HttpResponse"],"trait":["Responder"]};

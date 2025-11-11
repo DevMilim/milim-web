@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["App"]};
+window.SIDEBAR_ITEMS = {"fn":["handle_connection","match_route","parse_query","percent_decode","split_path_query"],"struct":["App"],"type":["Handler"]};

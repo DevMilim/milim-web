@@ -1,4 +1,6 @@
-cargo doc --no-deps -p core
+cd core
+cargo doc --no-deps --document-private-items
+cd ..
 rm -rf doc/**
 cp -r target/doc/* ./docs
 cat > docs/index.html <<'HTML'
