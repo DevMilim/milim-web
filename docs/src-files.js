@@ -1,2 +1,2 @@
-createSrcSidebar('[["core",["",[["responses",[],["mod.rs","responder.rs","response.rs"]]],["aplication.rs","config.rs","context.rs","error.rs","lib.rs","prelude.rs","request.rs","router.rs","tests.rs"]]]]');
-//{"start":19,"fragment_lengths":[184]}
+createSrcSidebar('[["milim_web",["",[],["aplication.rs","config.rs","context.rs","error.rs","lib.rs","prelude.rs","request.rs","response.rs","router.rs","tests.rs"]]]]');
+//{"start":19,"fragment_lengths":[147]}

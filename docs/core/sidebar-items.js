@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["server"],"mod":["aplication","config","context","error","prelude","request","responses","router","tests"]};

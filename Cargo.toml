@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-core = { version = "0.1.0", path = "core" }
 
 
 [workspace]
-members = ["core"]
+members = ["app"]
+
+[lib]
+path = "src/lib.rs"

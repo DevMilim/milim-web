@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Router"],"trait":["Middleware"],"type":["Handler"]};
