@@ -1,0 +1,16 @@
+cargo doc --no-deps -p core
+rm -rf doc/**
+cp -r target/doc/* ./doc
+cat > doc/index.html <<'HTML'
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Docs</title>
+    <meta http-equiv="refresh" content="0; url=core/index.html">
+  </head>
+  <body>
+    <p>Redirecionando para <a href="core/index.html">core docs</a>…</p>
+  </body>
+</html>
+HTML
