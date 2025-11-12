@@ -1,7 +1,7 @@
 # Uma biblioteca web minimalista escrita em rust.
 
 ## Sobre
-Uma biblioteca web leve e modular desenvilvida em **Rust**, projetada para facilitar a criação de APIs rapidas e seguras,
+Uma biblioteca web leve e modular desenvolvida em **Rust**, projetada para facilitar a criação de APIs rapidas e seguras,
 com sintaxe simples, similar ao express.js
 
 # Exemplo de uso
@@ -44,7 +44,7 @@ fn main() {
 }
 
 ```
-Visite **localhost:3000/username** e vera o resultado **O valor de name e: username**
+Visite ```localhost:3000/username``` e vera o resultado ```O valor de name e: username```
 
 # Exemplo de Middleware
 ``` rust
