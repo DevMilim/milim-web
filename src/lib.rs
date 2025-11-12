@@ -1,24 +1,23 @@
 //! # Biblioteca web criada totalmente em std
 //! # Exemplo de uso:
 //! `````` rust
-//! use core::server;
+//! use milim_web::server;
+//! use milim_web::request::Method::*;
 //!
 //! fn main() {
 //!    let mut app = server();
 //!
-//!    app.get("/", |req| {
+//!    app.route("/", |req, res, ctx| {
 //!        let query = req.get_query("name").unwrap_or("".to_string());
-//!        format!("Valor da query name e: {}", query)
+//!        res.body(&format!("Valor da query name e: {}", query))
 //!    });
 //!
-//!    app.get("/id/:name", |req| {
-//!        format!(
+//!    app.route("/id/:name", |req, res, ctx| {
+//!        res.body(&format!(
 //!            "O valor de name e: {}",
 //!            req.get_param("name").unwrap_or("".to_string())
-//!        )
+//!        ));
 //!    });
-//!
-//!    app.get("/:id/:name", |req| "id e name obtido");
 //!
 //!    app.listen("127.0.0.1:3000")
 //!}
