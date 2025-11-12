@@ -31,7 +31,7 @@ fn main() {
 
     app.route_use("/", Get, [Log], user);
 
-    app.route("/id/:name", Get, |req, res, ctx| {
+    app.route("/:name", Get, |req, res, ctx| {
         res.body(&format!(
             "O valor de name e: {}",
             req.get_param("name").unwrap_or("".to_string())

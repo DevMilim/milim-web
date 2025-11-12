@@ -1,7 +1,23 @@
 /*!
-# Uma biblioteca de servidor http escrita em rust.
+# Uma biblioteca web minimalista escrita em rust.
+
+## Sobre
+Uma biblioteca web leve e modular desenvilvida em **Rust**, projetada para facilitar a criação de APIs rapidas e seguras,
+com sintaxe simples, similar ao express.js
 
 # Exemplo de uso
+
+## Dependencia
+```shell
+cargo add milim-web --git https://github.com/DevMilim/milim-web
+```
+ou
+
+``` toml
+[dependencies]
+milim-web = { version = "0.1.0", git = "https://github.com/DevMilim/milim-web" }
+
+```
 
 ``` rust
 use milim_web::request::Method::*;
@@ -17,7 +33,7 @@ fn main() {
         res.body(&format!("Valor da query name e: {}", query));
     });
     // Cria uma rota dinamica com o parametro name
-    app.route("/id/:name", Get, |req, res, ctx| {
+    app.route("/:name", Get, |req, res, ctx| {
         res.body(&format!(
             "O valor de name e: {}",
             req.get_param("name").unwrap_or("".to_string())
@@ -29,6 +45,7 @@ fn main() {
 }
 
 ```
+Visite **localhost:3000/username** e vera o resultado **O valor de name e: username**
 
 # Exemplo de Middleware
 ``` rust
@@ -52,15 +69,14 @@ impl Middleware for Log {
 }
 
 ```
-
 # Criando rota que usa esse Middleware
 
 ``` rust
-// Registra uma rota do tipo get que usa o Middleware Log
 app.route_use("/", Get, [Log], |req, res, ctx| {
     res.body("Hello World!!");
 });
 ```
+
 */
 use crate::aplication::App;
 pub mod aplication;

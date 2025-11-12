@@ -32,7 +32,7 @@ fn main() {
         res.body(&format!("Valor da query name e: {}", query));
     });
     // Cria uma rota dinamica com o parametro name
-    app.route("/id/:name", Get, |req, res, ctx| {
+    app.route("/:name", Get, |req, res, ctx| {
         res.body(&format!(
             "O valor de name e: {}",
             req.get_param("name").unwrap_or("".to_string())
@@ -44,6 +44,7 @@ fn main() {
 }
 
 ```
+Visite **localhost:3000/username** e vera o resultado **O valor de name e: username**
 
 # Exemplo de Middleware
 ``` rust
