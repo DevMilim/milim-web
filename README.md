@@ -7,6 +7,7 @@ use milim_web::request::Method::*;
 use milim_web::server;
 
 fn main() {
+    // Cria uma instancia de App
     let mut app = server();
 
     app.route("/", Get, |req, res, ctx| {
@@ -26,4 +27,35 @@ fn main() {
     app.listen("127.0.0.1:3000")
 }
 
+```
+
+# Exemplo de Middleware
+``` rust
+pub struct Log;
+
+impl Log {
+    fn new() -> Self {
+        Self
+    }
+}
+
+impl Middleware for Log {
+    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> bool {
+        println!("request method: {:?}", req.method);
+        true
+    }
+
+    fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
+        println!("Response body {:?}", res.body);
+    }
+}
+
+```
+
+# Criando rota que usa esse Middleware
+
+``` rust
+app.route_use("/", Get, [Log], |req, res, ctx| {
+    res.body("Hello World!!");
+});
 ```
