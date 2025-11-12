@@ -30,7 +30,7 @@ impl App {
             global_middlewares: Vec::new(),
         }
     }
-    /// Usado para adicionar um middleware global ele sera executado antes dos de rota
+    /// # Usado para adicionar um middleware global ele sera executado antes dos de rota
     pub fn global_use<M: Middleware>(&mut self, middleware: M) {
         self.global_middlewares.push(Arc::new(middleware));
     }
