@@ -7,9 +7,9 @@ com sintaxe simples, similar ao express.js
 # Exemplo de uso
 
 ## Dependencia
-'''shell
+```shell
 cargo add milim-web --git https://github.com/DevMilim/milim-web
-'''
+```
 ou
 
 ``` toml
