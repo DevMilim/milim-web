@@ -1,4 +1,4 @@
 /target
-/actix-web-main
-/express-master
+/rust-lib
+/js-lib
 /Cargo.lock

@@ -8,6 +8,7 @@ com sintaxe simples, similar ao express.js
 # Exemplo de uso
 
 ## Dependencia
+
 ```shell
 cargo add milim-web --git https://github.com/DevMilim/milim-web
 ```
@@ -48,6 +49,7 @@ fn main() {
 Visite ```localhost:3000/username``` e vera o resultado ```O valor de name e: username```
 
 # Exemplo de Middleware
+
 ``` rust
 pub struct Log;
 
@@ -75,6 +77,7 @@ impl Middleware for Log {
 app.route_use("/", Get, [Log], |req, res, ctx| {
     res.body("Hello World!!");
 });
+
 ```
 
 ---
