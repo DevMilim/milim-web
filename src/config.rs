@@ -1,3 +1,4 @@
+/// Usado para configurar o servidor
 #[derive(Debug, Clone, Default)]
 pub struct Config {
     pub max_headers: u32,
