@@ -8,6 +8,3 @@ edition = "2024"
 
 [workspace]
 members = ["app"]
-
-[lib]
-path = "src/lib.rs"
