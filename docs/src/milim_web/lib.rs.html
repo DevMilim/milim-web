@@ -60,9 +60,9 @@
 <a href=#60 id=60 data-nosnippet>60</a>impl Middleware for Log {
 <a href=#61 id=61 data-nosnippet>61</a>    // Deve retornar true para passar para o proximo middleware ou proxima rota exemplo:
 <a href=#62 id=62 data-nosnippet>62</a>    // M1 -&gt; M2 -&gt; Rota -&gt; M2 -&gt; M1
-<a href=#63 id=63 data-nosnippet>63</a>    fn on_request(&amp;self, req: &amp;mut HttpRequest, ctx: &amp;Context) -&gt; bool {
+<a href=#63 id=63 data-nosnippet>63</a>    fn on_request(&amp;self, req: &amp;mut HttpRequest, ctx: &amp;Context) -&gt; MwFlow {
 <a href=#64 id=64 data-nosnippet>64</a>        println!("request method: {:?}", req.method);
-<a href=#65 id=65 data-nosnippet>65</a>        true
+<a href=#65 id=65 data-nosnippet>65</a>        MwFlow::Continue
 <a href=#66 id=66 data-nosnippet>66</a>    }
 <a href=#67 id=67 data-nosnippet>67</a>
 <a href=#68 id=68 data-nosnippet>68</a>    fn on_response(&amp;self, req: &amp;HttpRequest, res: &amp;mut HttpResponse, ctx: &amp;Context) {

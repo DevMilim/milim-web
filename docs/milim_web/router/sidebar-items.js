@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Router"],"trait":["Middleware"],"type":["Handler"]};
+window.SIDEBAR_ITEMS = {"enum":["MwFlow"],"struct":["Router"],"trait":["Middleware"],"type":["Handler"]};

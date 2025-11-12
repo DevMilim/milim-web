@@ -11,7 +11,7 @@ use crate::{
     context::Context,
     request::{HttpRequest, Method, Resource},
     response::HttpResponse,
-    router::{Middleware, Router},
+    router::{Middleware, MwFlow, Router},
 };
 
 pub struct App {
@@ -51,7 +51,7 @@ impl App {
             .push(Router::new(path, wrapper, method, Vec::new()));
     }
 
-    pub fn listen(self, adress: &str) {
+    pub fn listen(self, adress: &str) -> Result<()> {
         println!(" > Max body size: {}KB", self.config.max_body_kb);
         println!(" > Keep alive: {}s", self.config.keep_alive_s);
         println!(" > Max headers: {}", self.config.max_headers);
@@ -72,11 +72,12 @@ impl App {
                             self.config.read_timeout_s.into(),
                         )))
                         .ok();
-                    let _ = handle_connection(&*routes, &mut stream, &*ctx, &self.config);
+                    return handle_connection(&*routes, &mut stream, &*ctx, &self.config);
                 }
                 Err(e) => eprintln!("Erro ao aceitar a conexão? {:?}", e),
             }
         }
+        Ok(())
     }
 }
 
@@ -114,16 +115,16 @@ fn handle_connection(
 
             // Executando middlewares
             let mut executed = Vec::new();
-            let mut continue_flow = true;
+            let mut continue_flow = MwFlow::Continue;
 
             for mw in route.route_middlewares.iter() {
                 continue_flow = mw.on_request(&mut req, ctx);
                 executed.push(Arc::clone(mw));
-                if !continue_flow {
+                if continue_flow == MwFlow::Stop {
                     break;
                 }
             }
-            if continue_flow {
+            if continue_flow == MwFlow::Continue {
                 (route.handler)(&req, &mut res, ctx);
             }
 

@@ -9,8 +9,14 @@ use crate::{
 pub type Handler = Arc<dyn Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static>;
 
 pub trait Middleware: Send + Sync + 'static {
-    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> bool;
+    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> MwFlow;
     fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context);
+}
+
+#[derive(PartialEq)]
+pub enum MwFlow {
+    Continue,
+    Stop,
 }
 
 pub struct Router {

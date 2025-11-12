@@ -43,10 +43,10 @@ milim-web = { version = &quot;0.1.0&quot;, git = &quot;https://github.com/DevMil
 <span class="kw">impl </span>Middleware <span class="kw">for </span>Log {
     <span class="comment">// Deve retornar true para passar para o proximo middleware ou proxima rota exemplo:
     // M1 -&gt; M2 -&gt; Rota -&gt; M2 -&gt; M1
-    </span><span class="kw">fn </span>on_request(<span class="kw-2">&amp;</span><span class="self">self</span>, req: <span class="kw-2">&amp;mut </span>HttpRequest, ctx: <span class="kw-2">&amp;</span>Context) -&gt; bool {
+    </span><span class="kw">fn </span>on_request(<span class="kw-2">&amp;</span><span class="self">self</span>, req: <span class="kw-2">&amp;mut </span>HttpRequest, ctx: <span class="kw-2">&amp;</span>Context) -&gt; MwFlow {
         <span class="macro">println!</span>(<span class="string">"request method: {:?}"</span>, req.method);
-        <span class="bool-val">true
-    </span>}
+        MwFlow::Continue
+    }
 
     <span class="kw">fn </span>on_response(<span class="kw-2">&amp;</span><span class="self">self</span>, req: <span class="kw-2">&amp;</span>HttpRequest, res: <span class="kw-2">&amp;mut </span>HttpResponse, ctx: <span class="kw-2">&amp;</span>Context) {
         <span class="macro">println!</span>(<span class="string">"Response body {:?}"</span>, res.body);

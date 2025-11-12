@@ -60,9 +60,9 @@ impl Log {
 impl Middleware for Log {
     // Deve retornar true para passar para o proximo middleware ou proxima rota exemplo:
     // M1 -> M2 -> Rota -> M2 -> M1
-    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> bool {
+    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> MwFlow {
         println!("request method: {:?}", req.method);
-        true
+        MwFlow::Continue
     }
 
     fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
