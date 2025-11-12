@@ -29,18 +29,14 @@ impl App {
         }
     }
     /// Adiciona rota que usa middlewares
-    pub fn route_use<F, I, M>(&mut self, path: &str, method: Method, middlewares: I, handler: F)
+    pub fn route_use<F, I>(&mut self, path: &str, method: Method, middlewares: I, handler: F)
     where
         F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
-        I: IntoIterator<Item = M>,
-        M: Middleware,
+        I: IntoIterator<Item = Arc<dyn Middleware>>,
     {
         let wrapper = Arc::new(handler);
 
-        let wrapper_m: Vec<Arc<dyn Middleware>> = middlewares
-            .into_iter()
-            .map(|m| Arc::new(m) as Arc<dyn Middleware>)
-            .collect();
+        let wrapper_m: Vec<Arc<dyn Middleware>> = middlewares.into_iter().collect();
 
         self.routes
             .push(Router::new(path, wrapper, method, wrapper_m));
@@ -120,7 +116,7 @@ fn handle_connection(
             let mut executed = Vec::new();
             let mut continue_flow = true;
 
-            for mw in route.route_middlewares.iter().rev() {
+            for mw in route.route_middlewares.iter() {
                 continue_flow = mw.on_request(&mut req, ctx);
                 executed.push(Arc::clone(mw));
                 if !continue_flow {

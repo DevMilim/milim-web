@@ -57,6 +57,8 @@ impl Log {
 }
 
 impl Middleware for Log {
+    // Deve retornar true para passar para o proximo middleware ou proxima rota exemplo:
+    // M1 -> M2 -> Rota -> M2 -> M1
     fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> bool {
         println!("request method: {:?}", req.method);
         true
@@ -71,9 +73,8 @@ impl Middleware for Log {
 # Criando rota que usa esse Middleware
 
 ``` rust
-app.route_use("/", Get, [Log], |req, res, ctx| {
+app.route_use("/", Get, mx![Log], |req, res, ctx| {
     res.body("Hello World!!");
 });
 ```
-
 ---
