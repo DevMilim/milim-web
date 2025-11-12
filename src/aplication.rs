@@ -3,9 +3,11 @@ use std::{
     io::{Read, Result, Write},
     net::{TcpListener, TcpStream},
     sync::Arc,
+    time::Duration,
 };
 
 use crate::{
+    config::Config,
     context::Context,
     request::{HttpRequest, Method, Resource},
     response::HttpResponse,
@@ -15,6 +17,7 @@ use crate::{
 pub struct App {
     routes: Vec<Router>,
     context: Context,
+    config: Config,
 }
 
 impl App {
@@ -22,6 +25,7 @@ impl App {
         Self {
             routes: Vec::new(),
             context: Context {},
+            config: Config::new(),
         }
     }
     /// Adiciona rota que usa middlewares
@@ -52,6 +56,9 @@ impl App {
     }
 
     pub fn listen(self, adress: &str) {
+        println!(" > Max body size: {}KB", self.config.max_body_kb);
+        println!(" > Keep alive: {}s", self.config.keep_alive_s);
+        println!(" > Max headers: {}", self.config.max_headers);
         let listener = TcpListener::bind(adress).expect("Erro ao iniciar servidor");
         let routes = Arc::new(self.routes);
         let ctx = Arc::new(self.context);
@@ -59,7 +66,17 @@ impl App {
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => {
-                    let _ = handle_connection(&*routes, &mut stream, &*ctx);
+                    stream
+                        .set_read_timeout(Some(Duration::from_secs(
+                            self.config.read_timeout_s.into(),
+                        )))
+                        .ok();
+                    stream
+                        .set_write_timeout(Some(Duration::from_secs(
+                            self.config.read_timeout_s.into(),
+                        )))
+                        .ok();
+                    let _ = handle_connection(&*routes, &mut stream, &*ctx, &self.config);
                 }
                 Err(e) => eprintln!("Erro ao aceitar a conexão? {:?}", e),
             }
@@ -67,8 +84,13 @@ impl App {
     }
 }
 
-fn handle_connection(routes: &Vec<Router>, stream: &mut TcpStream, ctx: &Context) -> Result<()> {
-    let mut buf = [0u8; 8192];
+fn handle_connection(
+    routes: &Vec<Router>,
+    stream: &mut TcpStream,
+    ctx: &Context,
+    config: &Config,
+) -> Result<()> {
+    let mut buf = vec![0u8; Config::get_kb_value(config.max_body_kb)];
     let n = stream.read(&mut buf).expect("Erro ao ler stream");
     if n == 0 {
         return Ok(());
