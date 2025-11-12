@@ -76,6 +76,7 @@ app.route_use("/", Get, [Log], |req, res, ctx| {
     res.body("Hello World!!");
 });
 ```
+---
 
 */
 use crate::aplication::App;
