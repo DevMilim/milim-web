@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     io::{Read, Result, Write},
-    net::{TcpListener, TcpStream},
+    net::TcpListener,
     sync::Arc,
     time::Duration,
 };
@@ -18,6 +18,7 @@ pub struct App {
     routes: Vec<Router>,
     context: Context,
     config: Config,
+    global_middlewares: Vec<Arc<dyn Middleware>>,
 }
 
 impl App {
@@ -26,7 +27,12 @@ impl App {
             routes: Vec::new(),
             context: Context {},
             config: Config::new(),
+            global_middlewares: Vec::new(),
         }
+    }
+    /// Usado para adicionar um middleware global ele sera executado antes dos de rota
+    pub fn global_use<M: Middleware>(&mut self, middleware: M) {
+        self.global_middlewares.push(Arc::new(middleware));
     }
     /// Adiciona rota que usa middlewares
     pub fn route_use<F, I>(&mut self, path: &str, method: Method, middlewares: I, handler: F)
@@ -41,6 +47,7 @@ impl App {
         self.routes
             .push(Router::new(path, wrapper, method, wrapper_m));
     }
+    /// Adiciona uma rota
     pub fn route<F>(&mut self, path: &str, method: Method, handler: F)
     where
         F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
@@ -51,6 +58,7 @@ impl App {
             .push(Router::new(path, wrapper, method, Vec::new()));
     }
 
+    /// Inicia um servidor http sync
     pub fn listen(self, adress: &str) -> Result<()> {
         println!(" > Max body size: {}KB", self.config.max_body_kb);
         println!(" > Keep alive: {}s", self.config.keep_alive_s);
@@ -72,7 +80,77 @@ impl App {
                             self.config.read_timeout_s.into(),
                         )))
                         .ok();
-                    return handle_connection(&*routes, &mut stream, &*ctx, &self.config);
+                    let mut buf = vec![0u8; Config::get_kb_value(self.config.max_body_kb)];
+                    let n = stream.read(&mut buf).expect("Erro ao ler stream");
+                    if n == 0 {
+                        return Ok(());
+                    }
+
+                    let raw = String::from_utf8_lossy(&buf[..n]).to_string();
+
+                    let mut req = HttpRequest::from(raw);
+
+                    let path = match &req.resource {
+                        Resource::Path(p) => p.clone(),
+                    };
+
+                    let mut found_path = false;
+                    for route in routes.iter() {
+                        if let Some(params) = match_route(&route.pattern, &path) {
+                            found_path = true;
+                            if route.method != req.method {
+                                continue;
+                            }
+                            req.params = Some(params.0);
+                            req.queryes = Some(params.1);
+
+                            let mut res = HttpResponse::new("200", None, Some("".to_string()));
+
+                            // Executando middlewares
+                            let mut executed = Vec::new();
+                            let mut continue_flow = MwFlow::Continue;
+
+                            // Middlewares globais primeiro
+                            for mw in self.global_middlewares.iter() {
+                                continue_flow = mw.on_request(&mut req, &ctx);
+                                executed.push(Arc::clone(mw));
+                                if continue_flow == MwFlow::Stop {
+                                    break;
+                                }
+                            }
+
+                            // Middlewares de rota
+                            for mw in route.route_middlewares.iter() {
+                                continue_flow = mw.on_request(&mut req, &ctx);
+                                executed.push(Arc::clone(mw));
+                                if continue_flow == MwFlow::Stop {
+                                    break;
+                                }
+                            }
+                            if continue_flow == MwFlow::Continue {
+                                (route.handler)(&req, &mut res, &ctx);
+                            }
+
+                            while let Some(mw) = executed.pop() {
+                                mw.on_response(&req, &mut res, &ctx);
+                            }
+
+                            let res_string: String = res.into();
+
+                            stream
+                                .write_all(res_string.as_bytes())
+                                .expect("Erro ao escrever buffer de resposta");
+                            return Ok(());
+                        }
+                    }
+                    if !found_path {
+                        let res: String =
+                            HttpResponse::new("404", None, Some("Not Found".to_string())).into();
+                        let _ = stream.write_all(res.as_bytes());
+                        return Ok(());
+                    }
+                    let res: String = HttpResponse::new("405", None, Some("".to_string())).into();
+                    let _ = stream.write_all(res.as_bytes());
                 }
                 Err(e) => eprintln!("Erro ao aceitar a conexão? {:?}", e),
             }
@@ -81,75 +159,7 @@ impl App {
     }
 }
 
-fn handle_connection(
-    routes: &Vec<Router>,
-    stream: &mut TcpStream,
-    ctx: &Context,
-    config: &Config,
-) -> Result<()> {
-    let mut buf = vec![0u8; Config::get_kb_value(config.max_body_kb)];
-    let n = stream.read(&mut buf).expect("Erro ao ler stream");
-    if n == 0 {
-        return Ok(());
-    }
-
-    let raw = String::from_utf8_lossy(&buf[..n]).to_string();
-
-    let mut req = HttpRequest::from(raw);
-
-    let path = match &req.resource {
-        Resource::Path(p) => p.clone(),
-    };
-
-    let mut found_path = false;
-    for route in routes {
-        if let Some(params) = match_route(&route.pattern, &path) {
-            found_path = true;
-            if route.method != req.method {
-                continue;
-            }
-            req.params = Some(params.0);
-            req.queryes = Some(params.1);
-
-            let mut res = HttpResponse::new("200", None, Some("".to_string()));
-
-            // Executando middlewares
-            let mut executed = Vec::new();
-            let mut continue_flow = MwFlow::Continue;
-
-            for mw in route.route_middlewares.iter() {
-                continue_flow = mw.on_request(&mut req, ctx);
-                executed.push(Arc::clone(mw));
-                if continue_flow == MwFlow::Stop {
-                    break;
-                }
-            }
-            if continue_flow == MwFlow::Continue {
-                (route.handler)(&req, &mut res, ctx);
-            }
-
-            while let Some(mw) = executed.pop() {
-                mw.on_response(&req, &mut res, ctx);
-            }
-
-            let res_string: String = res.into();
-
-            stream
-                .write_all(res_string.as_bytes())
-                .expect("Erro ao escrever buffer de resposta");
-            return Ok(());
-        }
-    }
-    if !found_path {
-        let res: String = HttpResponse::new("404", None, Some("Not Found".to_string())).into();
-        let _ = stream.write_all(res.as_bytes());
-        return Ok(());
-    }
-    let res: String = HttpResponse::new("405", None, Some("".to_string())).into();
-    let _ = stream.write_all(res.as_bytes());
-    Ok(())
-}
-
+/// Separa o path da query e retorna
 fn split_path_query(s: &str) -> (&str, Option<&str>) {
     if let Some(pos) = s.find("?") {
         (&s[..pos], Some(&s[pos + 1..]))
@@ -157,6 +167,8 @@ fn split_path_query(s: &str) -> (&str, Option<&str>) {
         (&s, None)
     }
 }
+
+/// Faz o parse da query obtendo a chave e valor
 fn parse_query(q: Option<&str>) -> HashMap<String, String> {
     let mut map = HashMap::new();
     if let Some(qs) = q {
@@ -177,6 +189,7 @@ fn _percent_decode(_s: &str) -> String {
     String::new()
 }
 
+/// Obtem as rotas e os parametros da requisição
 fn match_route(
     pattern: &str,
     path: &str,

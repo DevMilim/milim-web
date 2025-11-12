@@ -77,4 +77,10 @@ app.route_use("/", Get, mx![Log], |req, res, ctx| {
     res.body("Hello World!!");
 });
 ```
+
+Ou como middleware global:
+```rust
+app.global_use(Log);
+
+```
 ---

@@ -1,4 +1,4 @@
-use std::io::Result;
+use std::{io::Result, sync::Arc};
 
 use milim_web::{
     context::Context,
@@ -27,9 +27,26 @@ impl Middleware for Log {
         println!("3: Response body {:?}", res.body);
     }
 }
+
+pub struct Log2;
+
+impl Middleware for Log2 {
+    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> MwFlow {
+        println!("1-2: request method: {:?}", req.method);
+
+        MwFlow::Continue
+    }
+
+    fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
+        println!("3-2: Response body {:?}", res.body);
+    }
+}
+
 fn main() -> Result<()> {
     use milim_web::request::Method::*;
     let mut app = server();
+
+    app.global_use(Log2);
 
     app.route_use("/", Get, mx!(Log {}), user);
 
