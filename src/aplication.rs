@@ -35,7 +35,7 @@ impl App {
         self.global_middlewares.push(Arc::new(middleware));
     }
     /// Adiciona rota que usa middlewares
-    pub fn route_use<F, I>(&mut self, path: &str, method: Method, middlewares: I, handler: F)
+    pub fn route_use<F, I>(&mut self, method: Method, path: &str, middlewares: I, handler: F)
     where
         F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
         I: IntoIterator<Item = Arc<dyn Middleware>>,
@@ -48,7 +48,7 @@ impl App {
             .push(Router::new(path, wrapper, method, wrapper_m));
     }
     /// Adiciona uma rota
-    pub fn route<F>(&mut self, path: &str, method: Method, handler: F)
+    pub fn route<F>(&mut self, method: Method, path: &str, handler: F)
     where
         F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
     {

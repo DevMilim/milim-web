@@ -48,16 +48,16 @@ fn main() -> Result<()> {
 
     app.global_use(Log2);
 
-    app.route_use("/", Get, mx!(Log {}), user);
+    app.route_use(Get, "/", mx!(Log {}), user);
 
-    app.route("/get/:name", Get, |req, res, ctx| {
+    app.route(Get, "/get/:name", |req, res, ctx| {
         res.body(&format!(
             "O valor de name e: {}",
             req.get_param("name").unwrap_or("".to_string())
         ));
     });
 
-    app.route("/:id/:name", Get, |req, res, ctx| {
+    app.route(Get, "/:id/:name", |req, res, ctx| {
         res.body(&format!(
             "Id: {}, Name: {}",
             req.get_param("id").unwrap_or("".to_string()),

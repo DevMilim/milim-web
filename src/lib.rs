@@ -27,13 +27,13 @@ fn main() {
     // Cria uma instancia de App
     let mut app = server();
 
-    app.route("/", Get, |req, res, ctx| {
+    app.route(Get, "/", |req, res, ctx| {
         // Obtem a query name se definida
         let query = req.get_query("name").unwrap_or("".to_string());
         res.body(&format!("Valor da query name e: {}", query));
     });
     // Cria uma rota dinamica com o parametro name
-    app.route("/:name", Get, |req, res, ctx| {
+    app.route(Get, "/:name", |req, res, ctx| {
         res.body(&format!(
             "O valor de name e: {}",
             req.get_param("name").unwrap_or("".to_string())
@@ -74,9 +74,15 @@ impl Middleware for Log {
 # Criando rota que usa esse Middleware
 
 ``` rust
-app.route_use("/", Get, mx![Log], |req, res, ctx| {
+app.route_use(Get, "/", mx![Log], |req, res, ctx| {
     res.body("Hello World!!");
 });
+```
+
+Ou como middleware global:
+```rust
+app.global_use(Log);
+
 ```
 ---
 */
