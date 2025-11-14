@@ -91,7 +91,6 @@ pub mod aplication;
 pub mod config;
 pub mod context;
 pub mod error;
-pub use macros::*;
 pub mod prelude;
 pub mod request;
 pub mod response;

@@ -11,7 +11,7 @@ use crate::{
     context::Context,
     request::{HttpRequest, Method, Resource},
     response::HttpResponse,
-    router::{Middleware, MwFlow, Router},
+    router::{IntoMiddleware, Middleware, MwFlow, RouteBuilder, Router},
 };
 
 pub struct App {
@@ -31,33 +31,21 @@ impl App {
         }
     }
     /// # Usado para adicionar um middleware global ele sera executado antes dos de rota
-    pub fn global_use<M: Middleware>(&mut self, middleware: M) {
-        self.global_middlewares.push(Arc::new(middleware));
-    }
-    /// Adiciona rota que usa middlewares
-    pub fn route_use<F, I>(&mut self, method: Method, path: &str, middlewares: I, handler: F)
-    where
-        F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
-        I: IntoIterator<Item = Arc<dyn Middleware>>,
-    {
-        let wrapper = Arc::new(handler);
-
-        let wrapper_m: Vec<Arc<dyn Middleware>> = middlewares.into_iter().collect();
-
-        self.routes
-            .push(Router::new(path, wrapper, method, wrapper_m));
+    pub fn global_use<M: IntoMiddleware>(&mut self, middleware: M) {
+        self.global_middlewares.push(middleware.into_middleware());
     }
     /// Adiciona uma rota
-    pub fn route<F>(&mut self, method: Method, path: &str, handler: F)
-    where
-        F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
-    {
-        let wrapper = Arc::new(handler);
-
-        self.routes
-            .push(Router::new(path, wrapper, method, Vec::new()));
+    pub fn route<'a>(&'a mut self, method: Method, path: &str) -> RouteBuilder<'a> {
+        RouteBuilder {
+            app: self,
+            pattern: path.to_owned(),
+            method,
+            middlewares: Vec::new(),
+        }
     }
-
+    pub(crate) fn add_route(&mut self, route: Router) {
+        self.routes.push(route);
+    }
     /// Inicia um servidor http sync
     pub fn listen(self, adress: &str) -> Result<()> {
         println!(" > Max body size: {}KB", self.config.max_body_kb);
@@ -120,7 +108,7 @@ impl App {
                             }
 
                             // Middlewares de rota
-                            for mw in route.route_middlewares.iter() {
+                            for mw in route.middlewares.iter() {
                                 continue_flow = mw.on_request(&mut req, &ctx);
                                 executed.push(Arc::clone(mw));
                                 if continue_flow == MwFlow::Stop {
