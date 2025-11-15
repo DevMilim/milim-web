@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     io::{Read, Result, Write},
     net::TcpListener,
-    sync::Arc,
+    sync::{Arc, RwLock},
     time::Duration,
 };
 
@@ -25,7 +25,9 @@ impl App {
     pub fn new() -> Self {
         Self {
             routes: Vec::new(),
-            context: Context {},
+            context: Context {
+                map: HashMap::new(),
+            },
             config: Config::new(),
             global_middlewares: Vec::new(),
         }
@@ -42,6 +44,9 @@ impl App {
             method,
             middlewares: Vec::new(),
         }
+    }
+    pub fn manage<T: Send + Sync + 'static>(&mut self, state: T) -> Option<T> {
+        self.context.state(state)
     }
     pub(crate) fn add_route(&mut self, route: Router) {
         self.routes.push(route);
@@ -71,7 +76,7 @@ impl App {
                     let mut buf = vec![0u8; Config::get_kb_value(self.config.max_body_kb)];
                     let n = stream.read(&mut buf).expect("Erro ao ler stream");
                     if n == 0 {
-                        return Ok(());
+                        continue;
                     }
 
                     let raw = String::from_utf8_lossy(&buf[..n]).to_string();
@@ -83,6 +88,7 @@ impl App {
                     };
 
                     let mut found_path = false;
+                    let mut handled = false;
                     for route in routes.iter() {
                         if let Some(params) = match_route(&route.pattern, &path) {
                             found_path = true;
@@ -128,14 +134,18 @@ impl App {
                             stream
                                 .write_all(res_string.as_bytes())
                                 .expect("Erro ao escrever buffer de resposta");
-                            return Ok(());
+                            handled = true;
+                            break;
                         }
+                    }
+                    if handled {
+                        continue;
                     }
                     if !found_path {
                         let res: String =
                             HttpResponse::new("404", None, Some("Not Found".to_string())).into();
                         let _ = stream.write_all(res.as_bytes());
-                        return Ok(());
+                        continue;
                     }
                     let res: String = HttpResponse::new("405", None, Some("".to_string())).into();
                     let _ = stream.write_all(res.as_bytes());

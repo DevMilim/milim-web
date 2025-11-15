@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 // Enum que representa o metodo da requisição http
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Method {
     Get,
     Post,

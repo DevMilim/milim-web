@@ -1,4 +1,8 @@
-use std::io::Result;
+use std::{
+    io::Result,
+    sync::{Mutex, RwLock},
+};
+mod example;
 
 use milim_web::{
     context::Context,
@@ -9,7 +13,15 @@ use milim_web::{
 };
 
 fn user(req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
-    res.body("Hello");
+    let state = ctx.get_state::<Mutex<u32>>();
+    match state {
+        Some(value) => {
+            let mut v = value.lock().unwrap();
+            res.body(&format!("Value: {:?}", v));
+            *v += 1;
+        }
+        None => todo!(),
+    }
 }
 
 pub struct Log {}
@@ -31,6 +43,8 @@ fn main() -> Result<()> {
     let mut app = server();
 
     app.global_use(Log {});
+    let state: Mutex<u32> = Mutex::new(0);
+    app.manage(state);
 
     app.route(Get, "/").handler(user);
 
