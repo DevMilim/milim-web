@@ -8,16 +8,19 @@ use tokio::{
 use crate::{
     config::Config,
     context::Context,
+    fairing::{Fairing, IntoFairing},
+    guard::Outcome,
     request::{HttpRequest, Method, Resource},
     response::HttpResponse,
-    router::{IntoMiddleware, Middleware, MwFlow, RouteBuilder, Router},
+    router::{RouteBuilder, Router},
+    status::StatusCode,
 };
 
 pub struct App {
     routes: Vec<Router>,
     context: Context,
     config: Config,
-    global_middlewares: Vec<Arc<dyn Middleware>>,
+    fairings: Vec<Arc<dyn Fairing>>,
 }
 
 impl App {
@@ -28,12 +31,12 @@ impl App {
                 map: HashMap::new(),
             },
             config: Config::new(),
-            global_middlewares: Vec::new(),
+            fairings: Vec::new(),
         }
     }
     /// # Usado para adicionar um middleware global ele sera executado antes dos de rota
-    pub fn global_use<M: IntoMiddleware>(&mut self, middleware: M) {
-        self.global_middlewares.push(middleware.into_middleware());
+    pub fn global_use<M: IntoFairing>(&mut self, middleware: M) {
+        self.fairings.push(middleware.into_fairing());
     }
     /// Adiciona uma rota
     pub fn route<'a>(&'a mut self, method: Method, path: &str) -> RouteBuilder<'a> {
@@ -41,7 +44,7 @@ impl App {
             app: self,
             pattern: path.to_owned(),
             method,
-            middlewares: Vec::new(),
+            guards: Vec::new(),
         }
     }
     pub fn manage<T: Send + Sync + 'static>(&mut self, state: T) {
@@ -56,12 +59,16 @@ impl App {
         println!(" > Keep alive: {}s", self.config.keep_alive_s);
         println!(" > Max headers: {}", self.config.max_headers);
         let listener = TcpListener::bind(adress).await?;
-        let routes = self.routes;
-        let ctx = self.context;
+        let App {
+            routes,
+            context,
+            config,
+            fairings,
+        } = self;
         loop {
             let (mut socket, _) = listener.accept().await?;
 
-            let mut buf = vec![0u8; Config::get_kb_value(self.config.max_body_kb)];
+            let mut buf = vec![0u8; Config::get_kb_value(config.max_body_kb)];
 
             match socket.read(&mut buf).await {
                 Ok(n) if n > 0 => {
@@ -74,66 +81,63 @@ impl App {
                     };
 
                     let mut handled = false;
+                    let mut method_mismatch = false;
                     for route in routes.iter() {
-                        if let Some(params) = match_route(&route.pattern, &path) {
+                        if let Some((params, queryes)) = match_route(&route.pattern, &path) {
                             if route.method != req.method {
+                                method_mismatch = true;
                                 continue;
                             }
-                            req.params = Some(params.0);
-                            req.queryes = Some(params.1);
+                            req.params = Some(params);
+                            req.queryes = Some(queryes);
 
-                            let mut res = HttpResponse::new("200", None, Some("".to_string()));
-
-                            // Executando middlewares
+                            let mut res = HttpResponse::new(StatusCode::Ok, None, "");
                             let mut executed = Vec::new();
-                            let mut continue_flow = MwFlow::Continue;
 
-                            // Middlewares globais primeiro
-                            for mw in self.global_middlewares.iter() {
-                                continue_flow = mw.on_request(&mut req, &ctx).await;
-                                executed.push(Arc::clone(mw));
-                                if continue_flow == MwFlow::Stop {
+                            // Executando os Fairings e registra em executed para executar on_response
+                            for fairings in fairings.iter() {
+                                fairings.on_request(&mut req, &context).await;
+                                executed.push(Arc::clone(fairings));
+                            }
+                            let mut outcome = Outcome::Success;
+                            // Executa os guards
+                            for guard in route.guards.iter() {
+                                outcome = guard.from_request(&req, &context).await;
+                                if outcome != Outcome::Success {
                                     break;
                                 }
                             }
-
-                            // Middlewares de rota
-                            for mw in route.middlewares.iter() {
-                                continue_flow = mw.on_request(&mut req, &ctx).await;
-                                executed.push(Arc::clone(mw));
-                                if continue_flow == MwFlow::Stop {
-                                    break;
-                                }
+                            if let Outcome::Failure(response) = outcome {
+                                res = response;
+                            } else {
+                                (route.handler)(&req, &mut res, &context);
                             }
-                            // Verificar se o middleware atual definiu que deve ou não continuar ou não
-                            if continue_flow == MwFlow::Continue {
-                                (route.handler)(&req, &mut res, &ctx);
+                            for f in executed.iter() {
+                                f.on_response(&req, &mut res, &context).await;
                             }
-
-                            while let Some(mw) = executed.pop() {
-                                mw.on_response(&req, &mut res, &ctx).await;
-                            }
-
                             let res_string: String = res.into();
 
                             socket.write_all(res_string.as_bytes()).await?;
 
                             handled = true;
                             break;
-                        } else {
-                            println!("Pagina não mapeada");
-                            let res: String =
-                                HttpResponse::new("404", None, Some("Not Found".to_string()))
-                                    .into();
-                            let _ = socket.write_all(res.as_bytes()).await?;
-                            break;
                         }
                     }
                     if handled {
                         continue;
                     }
-                    let res: String = HttpResponse::new("405", None, Some("".to_string())).into();
-                    let _ = socket.write_all(res.as_bytes()).await?;
+                    if method_mismatch {
+                        let res: String =
+                            HttpResponse::new(StatusCode::MethodNotAllowed, None, "".to_string())
+                                .into();
+                        let _ = socket.write_all(res.as_bytes()).await?;
+                        continue;
+                    } else {
+                        let res: String =
+                            HttpResponse::new(StatusCode::NotFound, None, "Not Found").into();
+                        let _ = socket.write_all(res.as_bytes()).await?;
+                        continue;
+                    }
                 }
                 Ok(_) => {
                     println!("Not found")
@@ -172,6 +176,7 @@ fn parse_query(q: Option<&str>) -> HashMap<String, String> {
     map
 }
 
+/// Ainda não implementado
 fn _percent_decode(_s: &str) -> String {
     String::new()
 }

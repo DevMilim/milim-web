@@ -93,11 +93,14 @@ pub mod aplication;
 pub mod config;
 pub mod context;
 pub mod error;
+pub mod fairing;
+pub mod guard;
 pub mod prelude;
 pub mod request;
 pub mod response;
 pub mod router;
-pub mod tests;
+pub mod status;
+
 pub use async_trait::async_trait;
 pub use macros::*;
 

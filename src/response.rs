@@ -1,36 +1,36 @@
 use std::{collections::HashMap, io::Result};
 
-use crate::router::IntoBody;
+use crate::{router::IntoBody, status::StatusCode};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HttpResponse {
     pub version: String,
-    pub status_code: String,
+    pub status_code: StatusCode,
     pub status_text: String,
     pub headers: Option<HashMap<String, String>>,
-    pub body: Option<String>,
+    pub body: String,
 }
 
 impl Default for HttpResponse {
     fn default() -> Self {
         Self {
             version: "HTTP/1.1".to_string(),
-            status_code: "200".to_string(),
+            status_code: StatusCode::Ok,
             status_text: "OK".to_string(),
             headers: None,
-            body: None,
+            body: "".to_string(),
         }
     }
 }
 
 impl HttpResponse {
     pub fn new(
-        status_code: &str,
+        status_code: StatusCode,
         headers: Option<HashMap<String, String>>,
-        body: Option<String>,
+        body: impl IntoBody,
     ) -> Self {
         let mut response: HttpResponse = HttpResponse::default();
-        if status_code != "200" {
+        if status_code != StatusCode::Ok {
             response.status_code = status_code.into();
         }
         response.headers = match &headers {
@@ -41,15 +41,8 @@ impl HttpResponse {
                 Some(h)
             }
         };
-        response.status_text = match response.status_code.as_str() {
-            "200" => "OK".to_string(),
-            "400" => "Bad Request".to_string(),
-            "404" => "Not Found".to_string(),
-            "405" => "Method not Allowed".to_string(),
-            "500" => "Internal Server Error".to_string(),
-            _ => "Not Found".to_string(),
-        };
-        response.body = body;
+        response.status_text = response.get_status_code().to_string();
+        response.body = body.into_body();
         response
     }
 
@@ -57,7 +50,14 @@ impl HttpResponse {
         &self.version
     }
     pub fn get_status_code(&self) -> &str {
-        &self.status_code
+        match self.status_code {
+            StatusCode::Ok => "200",
+            StatusCode::NotAutorized => "Not Autorized",
+            StatusCode::BadRequest => "Bad Request",
+            StatusCode::NotFound => "Not Found",
+            StatusCode::MethodNotAllowed => "Method Not Allowed",
+            StatusCode::InternalServerError => "Internal Server Error",
+        }
     }
     pub fn get_status_text(&self) -> &str {
         &self.status_text
@@ -71,13 +71,10 @@ impl HttpResponse {
         header_string
     }
     pub fn get_body(&self) -> &str {
-        match &self.body {
-            Some(b) => b.as_str(),
-            None => "",
-        }
+        &self.body
     }
     pub fn body<I: IntoBody>(&mut self, body: I) -> Self {
-        self.body = Some(body.into_body());
+        self.body = body.into_body();
         self.clone()
     }
     pub fn add_header(&mut self, key: &str, value: &str) -> Result<()> {
