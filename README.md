@@ -18,12 +18,6 @@ milim-web = { version = "0.1.0", git = "https://github.com/DevMilim/milim-web" }
 
 ```
 
-Execute:
-```shell
-cargo run
-
-```
-
 ``` rust
 use milim_web::{context::Context, request::HttpRequest, response::HttpResponse, run_app, server};
 
@@ -43,5 +37,11 @@ fn main() {
 }
 
 
+Execute:
+```shell
+cargo run
+
 ```
-Visite ```localhost:3000/hello``` e vera o resultado ```O valor de name e: username```
+
+```
+Visite ```localhost:3000/hello``` e vera o resultado ```Hello World!!```
