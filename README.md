@@ -19,68 +19,23 @@ milim-web = { version = "0.1.0", git = "https://github.com/DevMilim/milim-web" }
 ```
 
 ``` rust
-use milim_web::request::Method::*;
-use milim_web::server;
+use milim_web::{context::Context, request::HttpRequest, response::HttpResponse, run_app, server};
+
+fn hello(req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
+    res.body("Hello World!!");
+}
 
 fn main() {
-    // Cria uma instancia de App
+    use milim_web::request::Method::*;
     let mut app = server();
 
-    app.route(Get, "/", |req, res, ctx| {
-        // Obtem a query name se definida
-        let query = req.get_query("name").unwrap_or("".to_string());
-        res.body(&format!("Valor da query name e: {}", query));
+    app.route(Get, "/hello").handler(hello);
+
+    run_app(|| async {
+        let _ = app.listen("127.0.0.1:3000").await;
     });
-    // Cria uma rota dinamica com o parametro name
-    app.route(Get, "/:name", |req, res, ctx| {
-        res.body(&format!(
-            "O valor de name e: {}",
-            req.get_param("name").unwrap_or("".to_string())
-        ));
-    });
-
-    // Inicia o servidor Http na porta 3000
-    app.listen("127.0.0.1:3000")
 }
 
-```
-Visite ```localhost:3000/username``` e vera o resultado ```O valor de name e: username```
-
-# Exemplo de Middleware
-``` rust
-pub struct Log;
-
-impl Log {
-    fn new() -> Self {
-        Self
-    }
-}
-
-impl Middleware for Log {
-    // Deve retornar true para passar para o proximo middleware ou proxima rota exemplo:
-    // M1 -> M2 -> Rota -> M2 -> M1
-    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> MwFlow {
-        println!("request method: {:?}", req.method);
-        MwFlow::Continue
-    }
-
-    fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
-        println!("Response body {:?}", res.body);
-    }
-}
 
 ```
-# Criando rota que usa esse Middleware
-
-``` rust
-app.route_use(Get, "/", mx![Log], |req, res, ctx| {
-    res.body("Hello World!!");
-});
-```
-
-Ou como middleware global:
-```rust
-app.global_use(Log);
-
-```
----
+Visite ```localhost:3000/hello``` e vera o resultado ```O valor de name e: username```

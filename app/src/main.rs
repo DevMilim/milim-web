@@ -8,10 +8,6 @@ fn main() {
     use milim_web::request::Method::*;
     let mut app = server();
 
-    let _a = async |req: &HttpRequest, res: &mut HttpResponse, ctx: &Context| {
-        res.body("Hello World!!");
-    };
-
     app.route(Get, "/hello").handler(hello);
 
     run_app(|| async {
