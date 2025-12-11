@@ -7,7 +7,7 @@ use tokio::{
 
 use crate::{
     config::Config,
-    context::Context,
+    context::{Context, RequestContext},
     fairing::{Fairing, IntoFairing},
     guard::Outcome,
     request::{HttpRequest, Method, Resource},
@@ -61,7 +61,7 @@ impl App {
         let listener = TcpListener::bind(adress).await?;
         let App {
             routes,
-            context,
+            mut context,
             config,
             fairings,
         } = self;
@@ -72,6 +72,7 @@ impl App {
 
             match socket.read(&mut buf).await {
                 Ok(n) if n > 0 => {
+                    let req_ctx = RequestContext::new();
                     let raw = String::from_utf8_lossy(&buf[..n]).to_string();
 
                     let mut req = HttpRequest::from(raw);
@@ -96,13 +97,13 @@ impl App {
 
                             // Executando os Fairings e registra em executed para executar on_response
                             for fairings in fairings.iter() {
-                                fairings.on_request(&mut req, &context).await;
+                                fairings.on_request(&mut req, &mut context).await;
                                 executed.push(Arc::clone(fairings));
                             }
                             let mut outcome = Outcome::Success;
                             // Executa os guards
                             for guard in route.guards.iter() {
-                                outcome = guard.from_request(&req, &context).await;
+                                outcome = guard.from_request(&req, &mut context).await;
                                 if outcome != Outcome::Success {
                                     break;
                                 }
@@ -113,7 +114,7 @@ impl App {
                                 (route.handler)(&req, &mut res, &context);
                             }
                             for f in executed.iter() {
-                                f.on_response(&req, &mut res, &context).await;
+                                f.on_response(&req, &mut res, &mut context).await;
                             }
                             let res_string: String = res.into();
 

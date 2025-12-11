@@ -5,9 +5,8 @@ edition = "2024"
 
 [dependencies]
 async-trait = "0.1.89"
-macros = { version = "0.1.0", path = "macros" }
 tokio = { version = "1.48.0", features = ["full"] }
 
 
 [workspace]
-members = ["app", "macros"]
+members = ["app"]

@@ -1,11 +1,8 @@
 use std::{fmt::Debug, sync::Arc};
 
-use async_trait::async_trait;
-
 use crate::{
     aplication::App,
     context::Context,
-    fairing::{Fairing, IntoFairing},
     guard::{Guard, IntoGuard},
     request::{HttpRequest, Method},
     response::HttpResponse,

@@ -12,7 +12,7 @@ pub enum Outcome {
 
 #[async_trait]
 pub trait Guard: Send + Sync + 'static {
-    async fn from_request(&self, req: &HttpRequest, ctx: &Context) -> Outcome;
+    async fn from_request(&self, req: &HttpRequest, ctx: &mut Context) -> Outcome;
 }
 
 pub trait IntoGuard {

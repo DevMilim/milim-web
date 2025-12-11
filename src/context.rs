@@ -2,6 +2,27 @@ use std::{
     any::{Any, TypeId},
     collections::HashMap,
 };
+#[derive(Debug)]
+pub struct RequestContext {
+    data: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+}
+
+impl RequestContext {
+    pub fn new() -> Self {
+        Self {
+            data: HashMap::new(),
+        }
+    }
+    pub fn get_data<T: Send + Sync + 'static>(&mut self) -> Option<&T> {
+        self.data
+            .get(&TypeId::of::<T>())
+            .and_then(|boxed| boxed.downcast_ref())
+    }
+    pub fn data<T: Send + Sync + 'static>(&mut self, val: T) {
+        self.data.insert(TypeId::of::<T>(), Box::new(val));
+    }
+}
+
 /// Sera utilizado para obter e registrar estados
 #[derive(Debug)]
 pub struct Context {

@@ -102,7 +102,6 @@ pub mod router;
 pub mod status;
 
 pub use async_trait::async_trait;
-pub use macros::*;
 
 pub fn server() -> App {
     App::new()
