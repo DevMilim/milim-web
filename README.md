@@ -18,6 +18,12 @@ milim-web = { version = "0.1.0", git = "https://github.com/DevMilim/milim-web" }
 
 ```
 
+Execute:
+```shell
+cargo run
+
+```
+
 ``` rust
 use milim_web::{context::Context, request::HttpRequest, response::HttpResponse, run_app, server};
 
