@@ -86,6 +86,8 @@ app.global_use(Log);
 ```
 ---
 */
+use tokio::runtime::Runtime;
+
 use crate::aplication::App;
 pub mod aplication;
 pub mod config;
@@ -96,7 +98,20 @@ pub mod request;
 pub mod response;
 pub mod router;
 pub mod tests;
+pub use async_trait::async_trait;
+pub use macros::*;
 
 pub fn server() -> App {
     App::new()
+}
+
+pub fn run_app<F, Fut>(f: F)
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async move {
+        f().await;
+    })
 }

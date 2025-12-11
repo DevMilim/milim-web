@@ -1,11 +1,29 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
+
 use crate::{
     aplication::App,
     context::Context,
     request::{HttpRequest, Method},
     response::HttpResponse,
 };
+
+pub trait IntoBody {
+    fn into_body(self) -> String;
+}
+
+impl IntoBody for String {
+    fn into_body(self) -> String {
+        self
+    }
+}
+
+impl IntoBody for &str {
+    fn into_body(self) -> String {
+        self.to_string()
+    }
+}
 
 pub type Handler = Arc<dyn Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static>;
 
@@ -28,9 +46,10 @@ impl IntoHandler for Handler {
     }
 }
 
+#[async_trait]
 pub trait Middleware: Send + Sync + 'static {
-    fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> MwFlow;
-    fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context);
+    async fn on_request(&self, req: &mut HttpRequest, ctx: &Context) -> MwFlow;
+    async fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context);
 }
 
 pub trait IntoMiddleware {
@@ -85,6 +104,7 @@ impl<'a> RouteBuilder<'a> {
     }
 }
 
+#[derive(Clone)]
 pub struct Router {
     pub(crate) pattern: String,
     pub(crate) handler: Handler,

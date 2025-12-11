@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["server"],"macro":["mx"],"mod":["aplication","config","context","error","prelude","request","response","router","tests"]};
+window.SIDEBAR_ITEMS = {"fn":["server"],"mod":["aplication","config","context","error","prelude","request","response","router","tests"]};

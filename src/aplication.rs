@@ -1,9 +1,8 @@
-use std::{
-    collections::HashMap,
-    io::{Read, Result, Write},
+use std::{collections::HashMap, io::Result, sync::Arc};
+
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
     net::TcpListener,
-    sync::{Arc, RwLock},
-    time::Duration,
 };
 
 use crate::{
@@ -45,40 +44,27 @@ impl App {
             middlewares: Vec::new(),
         }
     }
-    pub fn manage<T: Send + Sync + 'static>(&mut self, state: T) -> Option<T> {
+    pub fn manage<T: Send + Sync + 'static>(&mut self, state: T) {
         self.context.state(state)
     }
     pub(crate) fn add_route(&mut self, route: Router) {
         self.routes.push(route);
     }
     /// Inicia um servidor http sync
-    pub fn listen(self, adress: &str) -> Result<()> {
+    pub async fn listen(self, adress: &str) -> Result<()> {
         println!(" > Max body size: {}KB", self.config.max_body_kb);
         println!(" > Keep alive: {}s", self.config.keep_alive_s);
         println!(" > Max headers: {}", self.config.max_headers);
-        let listener = TcpListener::bind(adress).expect("Erro ao iniciar servidor");
-        let routes = Arc::new(self.routes);
-        let ctx = Arc::new(self.context);
+        let listener = TcpListener::bind(adress).await?;
+        let routes = self.routes;
+        let ctx = self.context;
+        loop {
+            let (mut socket, _) = listener.accept().await?;
 
-        for stream in listener.incoming() {
-            match stream {
-                Ok(mut stream) => {
-                    stream
-                        .set_read_timeout(Some(Duration::from_secs(
-                            self.config.read_timeout_s.into(),
-                        )))
-                        .ok();
-                    stream
-                        .set_write_timeout(Some(Duration::from_secs(
-                            self.config.read_timeout_s.into(),
-                        )))
-                        .ok();
-                    let mut buf = vec![0u8; Config::get_kb_value(self.config.max_body_kb)];
-                    let n = stream.read(&mut buf).expect("Erro ao ler stream");
-                    if n == 0 {
-                        continue;
-                    }
+            let mut buf = vec![0u8; Config::get_kb_value(self.config.max_body_kb)];
 
+            match socket.read(&mut buf).await {
+                Ok(n) if n > 0 => {
                     let raw = String::from_utf8_lossy(&buf[..n]).to_string();
 
                     let mut req = HttpRequest::from(raw);
@@ -87,11 +73,9 @@ impl App {
                         Resource::Path(p) => p.clone(),
                     };
 
-                    let mut found_path = false;
                     let mut handled = false;
                     for route in routes.iter() {
                         if let Some(params) = match_route(&route.pattern, &path) {
-                            found_path = true;
                             if route.method != req.method {
                                 continue;
                             }
@@ -106,7 +90,7 @@ impl App {
 
                             // Middlewares globais primeiro
                             for mw in self.global_middlewares.iter() {
-                                continue_flow = mw.on_request(&mut req, &ctx);
+                                continue_flow = mw.on_request(&mut req, &ctx).await;
                                 executed.push(Arc::clone(mw));
                                 if continue_flow == MwFlow::Stop {
                                     break;
@@ -115,45 +99,50 @@ impl App {
 
                             // Middlewares de rota
                             for mw in route.middlewares.iter() {
-                                continue_flow = mw.on_request(&mut req, &ctx);
+                                continue_flow = mw.on_request(&mut req, &ctx).await;
                                 executed.push(Arc::clone(mw));
                                 if continue_flow == MwFlow::Stop {
                                     break;
                                 }
                             }
+                            // Verificar se o middleware atual definiu que deve ou não continuar ou não
                             if continue_flow == MwFlow::Continue {
                                 (route.handler)(&req, &mut res, &ctx);
                             }
 
                             while let Some(mw) = executed.pop() {
-                                mw.on_response(&req, &mut res, &ctx);
+                                mw.on_response(&req, &mut res, &ctx).await;
                             }
 
                             let res_string: String = res.into();
 
-                            stream
-                                .write_all(res_string.as_bytes())
-                                .expect("Erro ao escrever buffer de resposta");
+                            socket.write_all(res_string.as_bytes()).await?;
+
                             handled = true;
+                            break;
+                        } else {
+                            println!("Pagina não mapeada");
+                            let res: String =
+                                HttpResponse::new("404", None, Some("Not Found".to_string()))
+                                    .into();
+                            let _ = socket.write_all(res.as_bytes()).await?;
                             break;
                         }
                     }
                     if handled {
                         continue;
                     }
-                    if !found_path {
-                        let res: String =
-                            HttpResponse::new("404", None, Some("Not Found".to_string())).into();
-                        let _ = stream.write_all(res.as_bytes());
-                        continue;
-                    }
                     let res: String = HttpResponse::new("405", None, Some("".to_string())).into();
-                    let _ = stream.write_all(res.as_bytes());
+                    let _ = socket.write_all(res.as_bytes()).await?;
                 }
-                Err(e) => eprintln!("Erro ao aceitar a conexão? {:?}", e),
-            }
+                Ok(_) => {
+                    println!("Not found")
+                }
+                Err(_) => {
+                    println!("Erro")
+                }
+            };
         }
-        Ok(())
     }
 }
 

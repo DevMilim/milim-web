@@ -1,7 +1,6 @@
-use std::{
-    collections::HashMap,
-    io::{Result, Write},
-};
+use std::{collections::HashMap, io::Result};
+
+use crate::router::IntoBody;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HttpResponse {
@@ -77,12 +76,9 @@ impl HttpResponse {
             None => "",
         }
     }
-    pub fn body(&mut self, body: &str) -> Self {
-        self.body = Some(body.to_string());
+    pub fn body<I: IntoBody>(&mut self, body: I) -> Self {
+        self.body = Some(body.into_body());
         self.clone()
-    }
-    pub fn ok() -> Self {
-        HttpResponse::new("200", None, Some("".to_string()))
     }
     pub fn add_header(&mut self, key: &str, value: &str) -> Result<()> {
         let mut h = match self.headers.clone() {

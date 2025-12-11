@@ -1,20 +1,16 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
-    io::Sink,
-    sync::{Arc, RwLock},
 };
 /// Sera utilizado para obter e registrar estados
 #[derive(Debug)]
 pub struct Context {
-    pub(crate) map: HashMap<TypeId, Box<dyn Any>>,
+    pub(crate) map: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
 }
 
 impl Context {
-    pub fn state<T: Send + Sync + 'static>(&mut self, val: T) -> Option<T> {
-        self.map
-            .insert(TypeId::of::<T>(), Box::new(val))
-            .and_then(downcast_owned)
+    pub fn state<T: Send + Sync + 'static>(&mut self, val: T) {
+        self.map.insert(TypeId::of::<T>(), Box::new(val));
     }
     pub fn get_state<T: Send + Sync + 'static>(&self) -> Option<&T> {
         self.map

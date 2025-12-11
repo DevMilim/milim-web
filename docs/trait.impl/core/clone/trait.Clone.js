@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["milim_web",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"struct\" href=\"milim_web/config/struct.Config.html\" title=\"struct milim_web::config::Config\">Config</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"struct\" href=\"milim_web/context/struct.Context.html\" title=\"struct milim_web::context::Context\">Context</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"struct\" href=\"milim_web/response/struct.HttpResponse.html\" title=\"struct milim_web::response::HttpResponse\">HttpResponse</a>"]]]]);
+    var implementors = Object.fromEntries([["milim_web",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"enum\" href=\"milim_web/request/enum.Method.html\" title=\"enum milim_web::request::Method\">Method</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"struct\" href=\"milim_web/config/struct.Config.html\" title=\"struct milim_web::config::Config\">Config</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"struct\" href=\"milim_web/response/struct.HttpResponse.html\" title=\"struct milim_web::response::HttpResponse\">HttpResponse</a>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[840]}
+//{"start":57,"fragment_lengths":[831]}
