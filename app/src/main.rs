@@ -1,3 +1,4 @@
+use milim_web::request::Method::*;
 use milim_web::{context::Context, request::HttpRequest, response::HttpResponse, run_app, server};
 
 fn hello(req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
@@ -5,7 +6,6 @@ fn hello(req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
 }
 
 fn main() {
-    use milim_web::request::Method::*;
     let mut app = server();
 
     app.route(Get, "/hello").handler(hello);

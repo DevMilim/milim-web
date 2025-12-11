@@ -35,13 +35,12 @@ fn main() {
         let _ = app.listen("127.0.0.1:3000").await;
     });
 }
-
+```
 
 Execute:
 ```shell
 cargo run
-
 ```
 
-```
-Visite ```localhost:3000/hello``` e vera o resultado ```Hello World!!```
+
+Visite ```http://localhost:3000/hello``` e vera o resultado ```Hello World!!```
