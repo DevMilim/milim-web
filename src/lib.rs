@@ -95,12 +95,14 @@ pub mod context;
 pub mod error;
 pub mod fairing;
 pub mod guard;
+pub mod handler;
 pub mod prelude;
 pub mod request;
 pub mod responder;
 pub mod response;
 pub mod router;
 pub mod status;
+pub use macros;
 
 pub use async_trait::async_trait;
 

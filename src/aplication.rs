@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Result, ops::DerefMut, sync::Arc};
+use std::{collections::HashMap, io::Result, sync::Arc};
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -18,7 +18,7 @@ use crate::{
 
 pub struct App {
     routes: Vec<Router>,
-    context: Context,
+    context: Arc<Context>,
     config: Config,
     fairings: Vec<Arc<dyn Fairing>>,
 }
@@ -27,9 +27,9 @@ impl App {
     pub fn new() -> Self {
         Self {
             routes: Vec::new(),
-            context: Context {
+            context: Arc::new(Context {
                 map: HashMap::new(),
-            },
+            }),
             config: Config::new(),
             fairings: Vec::new(),
         }
@@ -48,7 +48,7 @@ impl App {
         }
     }
     pub fn manage<T: Send + Sync + 'static>(&mut self, state: T) {
-        self.context.state(state)
+        Arc::get_mut(&mut self.context).unwrap().state(state);
     }
     pub(crate) fn add_route(&mut self, route: Router) {
         self.routes.push(route);
@@ -67,7 +67,7 @@ impl App {
             fairings,
         } = self;
         for fairings in fairings.iter() {
-            fairings.on_ready(context).await;
+            fairings.on_ready(Arc::get_mut(context).unwrap()).await;
         }
         loop {
             let (mut socket, _) = listener.accept().await?;
@@ -95,19 +95,24 @@ impl App {
                             }
                             req.raw.params = Some(params);
                             req.raw.queryes = Some(queryes);
+                            let mut req_arc = Arc::new(req);
 
                             let mut res = HttpResponse::new(StatusCode::Ok, None, "");
                             let mut executed = Vec::new();
 
                             // Executando os Fairings e registra em executed para executar on_response
                             for fairings in fairings.iter() {
-                                fairings.on_request(&mut req, context).await;
+                                fairings
+                                    .on_request(Arc::get_mut(&mut req_arc).unwrap(), context)
+                                    .await;
                                 executed.push(Arc::clone(fairings));
                             }
                             let mut outcome = Outcome::Success;
                             // Executa os guards
                             for guard in route.guards.iter() {
-                                outcome = guard.from_request(&req, context).await;
+                                outcome = guard
+                                    .from_request(&req_arc, Arc::get_mut(context).unwrap())
+                                    .await;
                                 if outcome != Outcome::Success {
                                     break;
                                 }
@@ -115,10 +120,13 @@ impl App {
                             if let Outcome::Failure(response) = outcome {
                                 res = response;
                             } else {
-                                (route.handler)(&req, context);
+                                let response =
+                                    (route.handler)(Arc::clone(&req_arc), Arc::clone(context))
+                                        .await;
+                                res = response.into_response();
                             }
                             for f in executed.iter() {
-                                f.on_response(&req, &mut res, context).await;
+                                f.on_response(&req_arc, &mut res, context).await;
                             }
                             let res_string: String = res.into();
 

@@ -2,11 +2,9 @@ use std::{fmt::Debug, sync::Arc};
 
 use crate::{
     aplication::App,
-    context::Context,
     guard::{Guard, IntoGuard},
-    request::{HttpRequest, Method},
-    responder::Responder,
-    response::HttpResponse,
+    handler::{Handler, IntoHandler},
+    request::Method,
 };
 
 pub trait IntoBody: Debug {
@@ -22,33 +20,6 @@ impl IntoBody for String {
 impl IntoBody for &str {
     fn into_body(self) -> String {
         self.to_string()
-    }
-}
-
-pub type Handler = Arc<
-    dyn Fn(&HttpRequest, &Context) -> Box<dyn Responder + Send + 'static> + Send + Sync + 'static,
->;
-
-pub trait IntoHandler {
-    fn into_handler(self) -> Handler;
-}
-
-impl<F, R> IntoHandler for F
-where
-    F: Fn(&HttpRequest, &Context) -> R + Send + Sync + 'static,
-    R: Responder + Send + 'static,
-{
-    fn into_handler(self) -> Handler {
-        Arc::new(move |req: &HttpRequest, ctx: &Context| {
-            let res = (self)(req, ctx);
-            Box::new(res) as Box<dyn Responder + Send>
-        })
-    }
-}
-
-impl IntoHandler for Handler {
-    fn into_handler(self) -> Handler {
-        self
     }
 }
 

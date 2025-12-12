@@ -44,7 +44,3 @@ impl Context {
             .and_then(|boxed| boxed.downcast_ref())
     }
 }
-
-fn downcast_owned<T: 'static>(boxed: Box<dyn Any>) -> Option<T> {
-    boxed.downcast().ok().map(|boxed| *boxed)
-}

@@ -19,10 +19,11 @@ milim-web = { version = "0.1.0", git = "https://github.com/DevMilim/milim-web" }
 ```
 
 ``` rust
-use milim_web::{context::Context, request::HttpRequest, run_app, server};
+use milim_web::{context::Context, macros::handler, request::HttpRequest, run_app, server};
 
-fn hello(req: &HttpRequest, ctx: &Context) {
-    res.raw.body("Hello World!!");
+#[handler]
+async fn hello(req: &HttpRequest, ctx: &Context) -> &'static str {
+    "Hello World!!"
 }
 
 fn main() {
@@ -35,6 +36,7 @@ fn main() {
         let _ = app.listen("127.0.0.1:3000").await;
     });
 }
+
 ```
 
 Execute:
