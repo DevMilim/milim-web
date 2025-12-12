@@ -22,7 +22,7 @@ milim-web = { version = "0.2.0", git = "https://github.com/DevMilim/milim-web" }
 use milim_web::{context::Context, request::HttpRequest, response::HttpResponse, run_app, server};
 
 fn hello(req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
-    res.body("Hello World!!");
+    res.raw.body("Hello World!!");
 }
 
 fn main() {
