@@ -7,10 +7,10 @@ use tokio::{
 
 use crate::{
     config::Config,
-    context::{Context, RequestContext},
+    context::Context,
     fairing::{Fairing, IntoFairing},
     guard::Outcome,
-    request::{HttpRequest, Method, Resource},
+    request::{HttpRequest, HttpRequestData, Method, Resource},
     response::HttpResponse,
     router::{RouteBuilder, Router},
     status::StatusCode,
@@ -35,7 +35,7 @@ impl App {
         }
     }
     /// # Usado para adicionar um middleware global ele sera executado antes dos de rota
-    pub fn global_use<M: IntoFairing>(&mut self, middleware: M) {
+    pub fn fairing<M: IntoFairing>(&mut self, middleware: M) {
         self.fairings.push(middleware.into_fairing());
     }
     /// Adiciona uma rota
@@ -54,17 +54,21 @@ impl App {
         self.routes.push(route);
     }
     /// Inicia um servidor http sync
-    pub async fn listen(self, adress: &str) -> Result<()> {
+    pub async fn listen(&mut self, adress: &str) -> Result<()> {
         println!(" > Max body size: {}KB", self.config.max_body_kb);
         println!(" > Keep alive: {}s", self.config.keep_alive_s);
         println!(" > Max headers: {}", self.config.max_headers);
         let listener = TcpListener::bind(adress).await?;
+
         let App {
             routes,
-            mut context,
+            context,
             config,
             fairings,
         } = self;
+        for fairings in fairings.iter() {
+            fairings.on_ready(context).await;
+        }
         loop {
             let (mut socket, _) = listener.accept().await?;
 
@@ -72,12 +76,12 @@ impl App {
 
             match socket.read(&mut buf).await {
                 Ok(n) if n > 0 => {
-                    let req_ctx = RequestContext::new();
                     let raw = String::from_utf8_lossy(&buf[..n]).to_string();
 
-                    let mut req = HttpRequest::from(raw);
+                    let mut req_data = HttpRequestData::from(raw);
+                    let mut req = HttpRequest::new(req_data);
 
-                    let path = match &req.resource {
+                    let path = match &req.raw.resource {
                         Resource::Path(p) => p.clone(),
                     };
 
@@ -85,25 +89,25 @@ impl App {
                     let mut method_mismatch = false;
                     for route in routes.iter() {
                         if let Some((params, queryes)) = match_route(&route.pattern, &path) {
-                            if route.method != req.method {
+                            if route.method != req.raw.method {
                                 method_mismatch = true;
                                 continue;
                             }
-                            req.params = Some(params);
-                            req.queryes = Some(queryes);
+                            req.raw.params = Some(params);
+                            req.raw.queryes = Some(queryes);
 
                             let mut res = HttpResponse::new(StatusCode::Ok, None, "");
                             let mut executed = Vec::new();
 
                             // Executando os Fairings e registra em executed para executar on_response
                             for fairings in fairings.iter() {
-                                fairings.on_request(&mut req, &mut context).await;
+                                fairings.on_request(&mut req, &mut res, context).await;
                                 executed.push(Arc::clone(fairings));
                             }
                             let mut outcome = Outcome::Success;
                             // Executa os guards
                             for guard in route.guards.iter() {
-                                outcome = guard.from_request(&req, &mut context).await;
+                                outcome = guard.from_request(&req, context).await;
                                 if outcome != Outcome::Success {
                                     break;
                                 }
@@ -114,7 +118,7 @@ impl App {
                                 (route.handler)(&req, &mut res, &context);
                             }
                             for f in executed.iter() {
-                                f.on_response(&req, &mut res, &mut context).await;
+                                f.on_response(&req, &mut res, context).await;
                             }
                             let res_string: String = res.into();
 

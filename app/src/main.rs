@@ -18,11 +18,11 @@ impl Log {
 impl Fairing for Log {
     // Deve retornar true para passar para o proximo middleware ou proxima rota exemplo:
     // M1 -> M2 -> Rota -> M2 -> M1
-    async fn on_request(&self, req: &mut HttpRequest, ctx: &mut Context) {
-        println!("request method: {:?}", req.method);
+    async fn on_request(&self, req: &mut HttpRequest, res: &mut HttpResponse, ctx: &Context) {
+        println!("request method: {:?}", req.raw.method);
     }
 
-    async fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &mut Context) {
+    async fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
         println!("Response body {:?}", res.body);
     }
 }

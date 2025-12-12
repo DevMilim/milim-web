@@ -1,5 +1,21 @@
 use std::collections::HashMap;
 
+use crate::context::RequestContext;
+
+#[derive(Debug)]
+pub struct HttpRequest {
+    pub raw: HttpRequestData,
+    pub ctx: RequestContext,
+}
+
+impl HttpRequest {
+    pub fn new(req: HttpRequestData) -> Self {
+        Self {
+            raw: req,
+            ctx: RequestContext::new(),
+        }
+    }
+}
 // Enum que representa o metodo da requisição http
 #[derive(Debug, PartialEq, Clone)]
 pub enum Method {
@@ -46,7 +62,7 @@ pub enum Resource {
 
 /// Struct que representa a requisição http
 #[derive(Debug)]
-pub struct HttpRequest {
+pub struct HttpRequestData {
     pub method: Method,
     pub version: Version,
     pub resource: Resource,
@@ -55,7 +71,8 @@ pub struct HttpRequest {
     pub(crate) params: Option<HashMap<String, String>>,
     pub(crate) queryes: Option<HashMap<String, String>>,
 }
-impl HttpRequest {
+
+impl HttpRequestData {
     pub fn get_param(&self, key: &str) -> Option<String> {
         self.params.clone()?.get(key).cloned()
     }
@@ -64,7 +81,7 @@ impl HttpRequest {
     }
 }
 /// Implementa From<String> para
-impl From<String> for HttpRequest {
+impl From<String> for HttpRequestData {
     fn from(req: String) -> Self {
         // Variaveis que armazenam os campos da requisição
         let mut parsed_method = Method::Uninitialized;
@@ -89,7 +106,7 @@ impl From<String> for HttpRequest {
             }
         }
 
-        HttpRequest {
+        HttpRequestData {
             method: parsed_method,
             version: parsed_version,
             resource: parsed_resource,

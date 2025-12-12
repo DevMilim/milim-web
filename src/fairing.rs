@@ -6,8 +6,9 @@ use crate::{context::Context, request::HttpRequest, response::HttpResponse};
 
 #[async_trait]
 pub trait Fairing: Send + Sync + 'static {
-    async fn on_request(&self, req: &mut HttpRequest, ctx: &mut Context);
-    async fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &mut Context);
+    async fn on_ready(&self, ctx: &mut Context) {}
+    async fn on_request(&self, req: &mut HttpRequest, res: &mut HttpResponse, ctx: &Context);
+    async fn on_response(&self, req: &HttpRequest, res: &mut HttpResponse, ctx: &Context);
 }
 
 pub trait IntoFairing {

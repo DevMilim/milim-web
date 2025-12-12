@@ -13,10 +13,15 @@ impl RequestContext {
             data: HashMap::new(),
         }
     }
-    pub fn get_data<T: Send + Sync + 'static>(&mut self) -> Option<&T> {
+    pub fn get<T: Send + Sync + 'static>(&self) -> Option<&T> {
         self.data
             .get(&TypeId::of::<T>())
             .and_then(|boxed| boxed.downcast_ref())
+    }
+    pub fn get_mut<T: Send + Sync + 'static>(&mut self) -> Option<&mut T> {
+        self.data
+            .get_mut(&TypeId::of::<T>())
+            .and_then(|boxed| boxed.downcast_mut())
     }
     pub fn data<T: Send + Sync + 'static>(&mut self, val: T) {
         self.data.insert(TypeId::of::<T>(), Box::new(val));

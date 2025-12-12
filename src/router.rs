@@ -53,7 +53,7 @@ pub struct RouteBuilder<'a> {
 }
 
 impl<'a> RouteBuilder<'a> {
-    pub fn with_middleware<M: IntoGuard>(mut self, guard: M) -> Self {
+    pub fn faiting<M: IntoGuard>(mut self, guard: M) -> Self {
         self.guards.push(guard.into_guard());
         self
     }
