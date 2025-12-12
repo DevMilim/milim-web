@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Result, sync::Arc};
+use std::{collections::HashMap, io::Result, ops::DerefMut, sync::Arc};
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -78,7 +78,7 @@ impl App {
                 Ok(n) if n > 0 => {
                     let raw = String::from_utf8_lossy(&buf[..n]).to_string();
 
-                    let mut req_data = HttpRequestData::from(raw);
+                    let req_data = HttpRequestData::from(raw);
                     let mut req = HttpRequest::new(req_data);
 
                     let path = match &req.raw.resource {
@@ -101,7 +101,7 @@ impl App {
 
                             // Executando os Fairings e registra em executed para executar on_response
                             for fairings in fairings.iter() {
-                                fairings.on_request(&mut req, &mut res, context).await;
+                                fairings.on_request(&mut req, context).await;
                                 executed.push(Arc::clone(fairings));
                             }
                             let mut outcome = Outcome::Success;
@@ -115,7 +115,7 @@ impl App {
                             if let Outcome::Failure(response) = outcome {
                                 res = response;
                             } else {
-                                (route.handler)(&req, &mut res, &context);
+                                (route.handler)(&req, context);
                             }
                             for f in executed.iter() {
                                 f.on_response(&req, &mut res, context).await;

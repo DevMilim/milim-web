@@ -4,11 +4,11 @@ use crate::{router::IntoBody, status::StatusCode};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HttpResponse {
-    pub version: String,
-    pub status_code: StatusCode,
-    pub status_text: String,
-    pub headers: Option<HashMap<String, String>>,
-    pub body: String,
+    version: String,
+    status_code: StatusCode,
+    status_text: String,
+    headers: Option<HashMap<String, String>>,
+    body: String,
 }
 
 impl Default for HttpResponse {
@@ -73,9 +73,8 @@ impl HttpResponse {
     pub fn get_body(&self) -> &str {
         &self.body
     }
-    pub fn body<I: IntoBody>(&mut self, body: I) -> Self {
+    pub fn body<I: IntoBody>(&mut self, body: I) {
         self.body = body.into_body();
-        self.clone()
     }
     pub fn add_header(&mut self, key: &str, value: &str) -> Result<()> {
         let mut h = match self.headers.clone() {

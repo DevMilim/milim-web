@@ -5,6 +5,7 @@ use crate::{
     context::Context,
     guard::{Guard, IntoGuard},
     request::{HttpRequest, Method},
+    responder::Responder,
     response::HttpResponse,
 };
 
@@ -24,18 +25,24 @@ impl IntoBody for &str {
     }
 }
 
-pub type Handler = Arc<dyn Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static>;
+pub type Handler = Arc<
+    dyn Fn(&HttpRequest, &Context) -> Box<dyn Responder + Send + 'static> + Send + Sync + 'static,
+>;
 
 pub trait IntoHandler {
     fn into_handler(self) -> Handler;
 }
 
-impl<F> IntoHandler for F
+impl<F, R> IntoHandler for F
 where
-    F: Fn(&HttpRequest, &mut HttpResponse, &Context) + Send + Sync + 'static,
+    F: Fn(&HttpRequest, &Context) -> R + Send + Sync + 'static,
+    R: Responder + Send + 'static,
 {
     fn into_handler(self) -> Handler {
-        Arc::new(self)
+        Arc::new(move |req: &HttpRequest, ctx: &Context| {
+            let res = (self)(req, ctx);
+            Box::new(res) as Box<dyn Responder + Send>
+        })
     }
 }
 

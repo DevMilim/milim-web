@@ -14,14 +14,14 @@ ou
 
 ``` toml
 [dependencies]
-milim-web = { version = "0.2.0", git = "https://github.com/DevMilim/milim-web" }
+milim-web = { version = "0.1.0", git = "https://github.com/DevMilim/milim-web" }
 
 ```
 
 ``` rust
-use milim_web::{context::Context, request::HttpRequest, response::HttpResponse, run_app, server};
+use milim_web::{context::Context, request::HttpRequest, run_app, server};
 
-fn hello(req: &HttpRequest, res: &mut HttpResponse, ctx: &Context) {
+fn hello(req: &HttpRequest, ctx: &Context) {
     res.raw.body("Hello World!!");
 }
 

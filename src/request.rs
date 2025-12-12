@@ -20,16 +20,30 @@ impl HttpRequest {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Method {
     Get,
+    Head,
     Post,
+    Put,
+    Delete,
+    Connect,
+    Options,
+    Trace,
+    Patch,
     Uninitialized,
 }
 
 /// Implementa a trait From<&str> para poder converter &str para o enum Method
 impl From<&str> for Method {
     fn from(value: &str) -> Self {
-        match value {
-            "GET" | "get" => Method::Get,
-            "POST" | "post" => Method::Post,
+        match value.to_uppercase().as_str() {
+            "GET" => Method::Get,
+            "POST" => Method::Post,
+            "HEAD" => Method::Head,
+            "PUT" => Method::Put,
+            "DELETE" => Method::Delete,
+            "CONNECT" => Method::Connect,
+            "OPTIONS" => Method::Options,
+            "TRACE" => Method::Trace,
+            "PATCH" => Method::Patch,
             _ => Method::Uninitialized,
         }
     }
