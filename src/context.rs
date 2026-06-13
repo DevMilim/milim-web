@@ -43,9 +43,4 @@ impl Context {
             .get(&TypeId::of::<T>())
             .and_then(|boxed| boxed.downcast_ref())
     }
-    pub fn get_state_mut<T: Send + Sync + 'static>(&mut self) -> Option<&mut T> {
-        self.map
-            .get_mut(&TypeId::of::<T>())
-            .and_then(|boxed| boxed.downcast_mut())
-    }
 }
